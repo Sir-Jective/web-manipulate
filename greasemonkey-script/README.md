@@ -7,4 +7,4 @@ edit so that the scripts of your need are replaced / not executed / get inserted
 can only manipulate javascript
 
 (greasemonkey is an addon)
-this script was inspired & copied from  http://userscripts-mirror.org/scripts/review/125936
+this script was inspired & copied from  http://userscripts-mirror.org/scripts/show/125936
