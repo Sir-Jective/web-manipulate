@@ -1,0 +1,147 @@
+<!DOCTYPE HTML>
+<style>
+#t1 > tbody > tr > td {
+	border: 1px solid black;
+}
+
+</style>
+<table id="t1">
+<tbody>
+<tr>
+<td>
+<table>
+<tr><td><label>state</label></td><td><div id="state"></div></td></tr>
+<tr><td><label>communication</label></td><td><textarea id="comm" style="height:200px;width:300px;"></textarea></td></tr>
+<tr><td><button id="check()">Check current state</button></td></tr>
+<tr><td><button id="register()">Install SW</button></td></tr>
+<tr><td><button id="send()">send "test" to SW</button></td></tr>
+<tr><td><button id="unregister()">uninstall</button></td></tr>
+</table>
+</td>
+<td>
+<table>
+<tr><td><label>page</label></td><td><input id="page" style="width:300px;"></td></tr>
+<tr><td><label>headers</label></td><td><input id="headers" style="width:300px;"></td></tr>
+<tr><td><label>(mocked) result</label></td><td><textarea id="mock" style="height:200px;width:300px;"></textarea></td></tr>
+<tr><td><button id="mock()">enable mocking, for this page and this result</button></td></tr>
+<tr><td><button id="unmock()">disable mocking, for this page</button></td></tr>
+<tr><td><button id="mock_dis()">temporarily disable mocking</button></td></tr>
+<tr><td><button id="mock_en()">temporarily re-enable mocking</button></td></tr>
+</table>
+</td>
+</tr>
+</tbody>
+</table>
+<script>
+"use strict";
+document.getElementById("check()").onclick=check;
+document.getElementById("register()").onclick=register;
+document.getElementById("send()").onclick=(()=>send("test"));
+document.getElementById("unregister()").onclick=unregister;
+document.getElementById("headers").value="{\"Content-Type\":\"text/html\"}";
+document.getElementById("mock()").onclick=mock;
+document.getElementById("unmock()").onclick=unmock;
+document.getElementById("mock_en()").onclick=mock_en;
+document.getElementById("mock_dis()").onclick=mock_dis;
+
+
+function check(){
+	if ('serviceWorker' in navigator) {
+		navigator.serviceWorker.getRegistrations().then(
+			function(regs){
+				if(regs.length==0){
+					state("service worker not installed.");
+					return;
+				}
+				if(regs.length>1){
+					state("morethan 2 sw installed.");
+					return;
+				}
+				var reg=regs[0];
+				if(reg.installing) {
+					state("service worker is installing. Please close all tabs of this site.");
+				}
+				else if(reg.waiting) {
+					state("service worker waiting. Please close all tabs of this site.");
+				} 
+				else if(reg.active) {
+					state("service worker active.");
+				}
+			}
+		).catch(function(error) {
+		state("Error: "+error);
+	});
+	}
+	else{
+		state("service workers not available.");
+	}
+}
+
+function register(){
+	var loc=prompt("From where? e.g. \"/sw_hij.js\"");
+	var scope=prompt("For where? e.g. \"/\"");
+	navigator.serviceWorker.register(loc, { scope: scope }).then(function(reg) {
+		if(reg.installing) {
+			state("this service worker was just installed now. Please reload.");
+		} 
+		else if(reg.waiting) {
+			state("this service worker waiting. Please close all tabs of this site.");
+		} 
+		else if(reg.active) {
+			state("this service worker active.");
+		}
+		
+	}).catch(function(error) {
+		// registration failed
+		state("this registring service worker failed. Error: "+error);
+	});
+}
+
+function unregister(){
+	navigator.serviceWorker.getRegistrations().then(function(registrations) {
+		for(let registration of registrations) {
+			registration.unregister()
+		}
+	});
+}
+
+function send(m){
+	document.getElementById("comm").value+="Send: "+m.toString()+"\r\n";
+	navigator.serviceWorker.controller.postMessage(m);
+	console.log("send: ",m);
+}
+
+function state(s){
+	document.getElementById("state").innerHTML=s;
+}
+
+//receive
+function regReceive(){
+	navigator.serviceWorker.addEventListener('message',function(event){
+		document.getElementById("comm").value+="Receive: "+event.data.toString()+"\r\n";
+		console.log("receive: ",event.data);
+	});
+}
+
+//mock
+function mock_en(){
+	send("enable mocking");
+}
+
+function mock_dis(){
+	send("disable mocking");
+}
+
+function mock(){
+	var j={reqUrl:document.getElementById("page").value,headers:JSON.parse(document.getElementById("headers").value),body:document.getElementById("mock").value};
+	send("add "+JSON.stringify(j));
+}
+
+function unmock(){
+	var j={reqUrl:document.getElementById("page").value};
+	send("remove "+JSON.stringify(j));
+}
+
+check();
+regReceive();
+</script>
