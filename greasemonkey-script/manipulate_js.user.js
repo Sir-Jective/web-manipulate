@@ -22,8 +22,13 @@ window.addEventListener('beforescriptexecute', function(e) {
     changed++;
 		console.log("prohibited "+src+" from executing, and replacing it with something else");
 		e.preventDefault();
-		append(toappend);//toappend is the function defined in replacing.js
+		append(replacement);//replacement is a function defined in replacing.js
   }
+	if(src.search(/script_after_which_insert\.js/) != -1){
+		changed++;
+		console.log("appended some script after "+src);
+		append(additional_script);//additional_script is a function defined in replacing.js
+	}
 }, true);
 
 
