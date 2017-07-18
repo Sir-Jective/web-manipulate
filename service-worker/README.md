@@ -10,4 +10,4 @@ Then you can manipulate any GET request the site makes.
 ##Downsides:
 Only works when website is served with https
 
-You need to make a script available with **other** means. 
+You need to make a script available with *other* means. 
